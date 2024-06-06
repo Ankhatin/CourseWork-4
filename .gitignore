@@ -1,0 +1,11 @@
+# Default ignored files
+
+../CourseWork_3/data/
+.idea/
+__pycache__/
+tests/__pycache__/
+
+# Unit test
+htmlcov/
+.coverage
+.pytest_cache/
