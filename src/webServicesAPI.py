@@ -19,6 +19,10 @@ class HeadHunterAPI(Parser):
         self.vacancies = []
 
     def load_data(self, keyword=None):
+        '''
+        Функция отправляет запрос на платформу hh.ru,
+        загружает данные и возращает в виде список словарей
+        '''
         vacancies: list[dict] = []
         self.params['text'] = keyword
         response = requests.get(self.url, headers=self.headers, params=self.params)
@@ -28,6 +32,10 @@ class HeadHunterAPI(Parser):
 
 
 class CurrencyCourseAPI(Parser):
+    '''
+    Класс отправляет запрос на сайт Центрального Банка РФ,
+    загружает файл в формате xml и парсит его
+    '''
     courses = {}
 
     def __init__(self):
@@ -36,8 +44,12 @@ class CurrencyCourseAPI(Parser):
         self.url = 'https://www.cbr.ru/scripts/XML_daily.asp?date_req=' + formatted_date
 
     def load_data(self, keyword=None):
+        '''
+        Функция отправляет запрос, получает котировки валют,
+        парсит данные и записывает курсы валют в атрибут класса course
+        '''
         response = requests.get(self.url)
-        names = ('KZT', 'USD', 'EUR')
+        names = ('KZT', 'BYR', 'USD', 'EUR')
         if response.status_code == 200:
             text_XML = response.content
             elements = etree.fromstring(text_XML, parser=etree.XMLParser(encoding='cp1251', recover=True))

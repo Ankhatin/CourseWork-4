@@ -59,7 +59,8 @@ class Vacancy:
             return False
 
     def __str__(self):
-        return f'{self.name}, {self.url}, {self.salary}, {self.experience}'
+        return (f'{self.name}, {self.url}, {self.salary}, опыт: {self.experience}, '
+                f'дата публикации: {self.date}')
 
 
     @property
@@ -68,11 +69,8 @@ class Vacancy:
         Создаем декоратор для свойства "Зарплата от" который в случае
         если сумма указана в валюте будет возвращать значение е рублях
         '''
-        if self.currency in ('KZT', 'USD', 'EUR'):
-            if self._salary_from:
-                return self._salary_from * CurrencyCourseAPI.courses[self.currency]
-            else:
-                return self._salary_from
+        if self._salary_from and self.currency in ('KZT' 'BYR', 'USD', 'EUR'):
+            return self._salary_from * CurrencyCourseAPI.courses[self.currency]
         else:
             return self._salary_from
 
@@ -82,11 +80,8 @@ class Vacancy:
         Создаем декоратор для свойства "Зарплата до" который в случае
         если сумма указана в валюте будет возвращать значение е рублях
         '''
-        if self.currency in ('KZT', 'USD', 'EUR'):
-            if self._salary_to:
-                return self._salary_to * CurrencyCourseAPI.courses[self.currency]
-            else:
-                return self._salary_to
+        if self._salary_to and self.currency in ('KZT' 'BYR', 'USD', 'EUR'):
+            return self._salary_to * CurrencyCourseAPI.courses[self.currency]
         else:
             return self._salary_to
 
@@ -112,33 +107,32 @@ class Vacancy:
                 salary_to = vacancy['salary']['to']
                 if vacancy['salary']['currency'] == 'RUR':
                     currency = 'руб.'
-                elif vacancy['salary']['currency'] == 'KZT':
-                    currency = 'KZT'
-                elif vacancy['salary']['currency'] == 'USD':
-                    currency = 'USD'
-                elif vacancy['salary']['currency'] == 'EUR':
-                    currency = 'EUR'
+                else:
+                    currency = vacancy['salary']['currency']
                 salary = cls.build_salary(salary_from, salary_to, currency)
             else:
                 salary = "Зарплата не указана"
             if vacancy.get('experience'):
                 if vacancy['experience']['id'] == 'noExperience':
-                    experience = 'Без опыта'
+                    experience = 'без опыта'
                 elif vacancy['experience']['id'] == 'between1And3':
-                    experience = 'От 1 до 3 лет'
+                    experience = 'от 1 до 3 лет'
                 elif vacancy['experience']['id'] == 'between3And6':
-                    experience = 'От 3 до 6 лет'
+                    experience = 'от 3 до 6 лет'
                 else:
                     experience = 'Нет данных'
             # Конвертируем дату из формата ISO строки в объект datetime и отсекаем время
-            if vacancy.get('date'):
-                date = datetime.datetime.fromisoformat(vacancy['date']).date()
+            if vacancy.get('published_at'):
+                date = datetime.datetime.fromisoformat(vacancy['published_at']).date()
                 date = date.strftime("%d.%m.%Y")
             vacancy_instance = cls(name, url, salary_from, salary_to, salary, currency, experience, date)
             vacancies_list.append(vacancy_instance)
         return vacancies_list
 
     def format_instance_to_dict(self):
+        '''
+        Функция преобразует экземпляр вакансии в словарь для записи в json файл
+        '''
         instance_in_dict = dict(name=self.name, url=self.url, salary_from=self._salary_from, salary_to=self._salary_to,
                                 salary=self.salary, currency=self.currency, experience=self.experience, date=self.date)
         return instance_in_dict
@@ -146,11 +140,13 @@ class Vacancy:
     @staticmethod
     def build_salary(salary_from, salary_to, currency):
         '''
-        Функция формирует строку для отображения в удобном формате
+        Функция формирует строку для отображения в удобном для пользователя формате
         '''
         if not salary_from:
             salary = f'Зарплата до {salary_to} {currency}'
-        else:
+        elif not salary_to:
             salary = f'Зарплата от {salary_from} {currency}'
+        else:
+            salary = f'Зарплата от {salary_from} до {salary_to} {currency}'
         return salary
 
