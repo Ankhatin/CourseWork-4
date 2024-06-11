@@ -3,9 +3,10 @@ import os
 import os.path
 import json
 from src.vacancies import Vacancy
+from main import ROOT_DIR
 
-ROOT_DIR = os.getcwd()
-class DataManager:
+
+class DataManager(ABC):
 
     @abstractmethod
     def __init__(self, file_name):
@@ -16,7 +17,7 @@ class DataManager:
         pass
 
     @abstractmethod
-    def read_data(self, data):
+    def read_data(self):
         pass
 
     @abstractmethod
@@ -58,6 +59,9 @@ class FileManager(DataManager):
             json.dump(data_to_write, data_file, ensure_ascii=False)
 
     def read_data(self):
+        '''
+        Функция читает файл с вакансиями json и сохраняет в список объектов Vacancy
+        '''
         with (open(self.path, 'r', encoding='utf-8') as data_file):
             data = json.load(data_file)
             vacancies : list[Vacancy] = []
@@ -67,45 +71,59 @@ class FileManager(DataManager):
                 vacancies.append(vacancy)
             return vacancies
 
-    def write_vacancy(self, vacancies: list[dict]):
-        with open(self.path, 'w', encoding='utf-8') as data_file:
-            json.dump(vacancies, data_file, ensure_ascii=False)
-
     def add_vacancy(self, vacancy):
+        '''
+        Функция добавляет одну вакансию в файл
+        '''
         vacancies = self.read_data()
         vacancies.append(vacancy)
         self.save_data(vacancies)
 
-    def get_vacancy(self, **kwargs):
+    def get_vacancy(self, params):
         '''
         Функция принимает произвольное количество именованных переменных,
         имена должны совпадать со свойствами экземпляров вакансий,
-        возвращает экземпляр найденной вакансии
+        возвращает экземпляр найденной вакансии или список похожих вакансий
         '''
-        if len(kwargs) == 0:
+        if len(params) == 0:
             print('Параметры для поиска вакансии не заданы')
         else: # Если переданы именованные аргументы
-            if kwargs.get('name'):
-                name = kwargs['name']
-            if kwargs.get('salary_from'):
-                salary_from = kwargs['salary_from']
-            if kwargs.get('salary_to'):
-                salary_to = kwargs['salary_to']
+            if params.get('name'):
+                name = params['name']
+            if params.get('salary_from'):
+                salary_from = int(params['salary_from'])
+            if params.get('salary_to'):
+                salary_to = int(params['salary_to'])
             vacancies = self.read_data()
+            founded_vacancies = []
             for vacancy in vacancies:
                 if 'name' in locals() and vacancy.name.lower() == name.lower():
-                    if 'salary_from' in locals() and vacancy.salary_from == salary_from:
-                        if 'salary_to' in locals() and vacancy.salary_to == salary_to:
-                            return vacancy
-        return False
+                    founded_vacancies.append(vacancy) # добавляем вакансию в список найденных
+                    if 'salary_from' in locals() and vacancy._salary_from != salary_from:
+                        founded_vacancies.remove(vacancy) # удаляем из списка
+                    else:
+                        if 'salary_to' in locals() and vacancy._salary_to == salary_to:
+                            return founded_vacancies # Найдено точно совпадение вакансии по трем полям, отправляем пользователю
+                        elif 'salary_to' not in locals() and vacancy._salary_to == None:
+                            return founded_vacancies #
+                        else:
+                            founded_vacancies.remove(vacancy) # удаляем из списка
+            return founded_vacancies
 
     def delete_vacancy(self, vacancy):
+        '''
+        Функция удаляет отобранную по критериям вакансию и сохраняет изменения в файл
+        '''
         vacancies = self.read_data()
         vacancies.remove(vacancy)
         self.save_data(vacancies)
 
     @staticmethod
     def check_on_exist(file_name):
+        '''
+        Функция проверяет наличие файла по пути к файлу с данными,
+        возвращает True в случае успеха
+        '''
         path_data = os.path.join(ROOT_DIR, 'data', file_name)
         try:
             with open(path_data, mode='r', encoding='utf-8') as f:

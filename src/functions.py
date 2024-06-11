@@ -1,4 +1,6 @@
 ﻿import re
+
+
 def filter_vacancies(vacancies, filter_words):
     '''
     Функция принимает ключевые слова для фильтрации вакансий,
@@ -37,15 +39,22 @@ def filter_by_salary(vacancies, filter):
     и фильтрует вакансии по значениям зарплат
     '''
     filtered_vacancies = []
-    filter_list = re.split(r'\D+', filter)
     for vacancy in vacancies:
         if vacancy.salary == 'Зарплата не указана':
             continue
-        elif vacancy._salary_from:
-            if vacancy.salary_from >= int(filter_list[0]):
+        # Проверяем вариант, когда пользователь указал только поле "Зарплата от"
+        if len(filter) == 1:
+            if vacancy._salary_from and vacancy.salary_from >= filter[0]: # Если есть поле "Зарплата от" в вакансии проверяем больше ли оно нижней границы диапозона
                 filtered_vacancies.append(vacancy)
-        else:
-            if vacancy.salary_to > int(filter_list[0]):
+            elif not vacancy._salary_from and vacancy.salary_to >= filter[0]:
+                filtered_vacancies.append(vacancy)
+        else: # Если пользователь указал поля "Зарплата от" и "Зарплата до"
+            if vacancy._salary_from and vacancy._salary_to:
+                if vacancy.salary_from >= filter[0] and vacancy.salary_to >= filter[1]:
+                    filtered_vacancies.append(vacancy)
+            elif vacancy._salary_from and vacancy.salary_from >= filter[0]:
+                filtered_vacancies.append(vacancy)
+            elif vacancy._salary_to and vacancy.salary_to >= filter[1]:
                 filtered_vacancies.append(vacancy)
     return filtered_vacancies
 
@@ -65,14 +74,21 @@ def sort_key(vacancy):
     return vacancy
 
 
-def check_salary_on_correct(filter):
+def get_salary_range(filter):
     '''
     Функция принимает строку из двух чисел, введенных пользователем
      и проверяет являются ли переданные данные числами и первое значение меньше второго
     '''
-    filter_list = re.split(r'\D+', filter)
-    if filter_list[0].isdigit() and filter_list[1].isdigit():
-        return int(filter_list[0]) < int(filter_list[1])
+    filter_list = [] # список со значениями диапазона зарплат
+    pattern = re.compile(r'\d+\D*\d*')
+    if pattern.search(filter): # Если соответствие найдено по индексу находим искомую строку со значениями диапазона
+        filter = pattern.search(filter)[0]
+    filter = re.split(r'\D+', filter)
+    for item in filter:
+        filter_list.append(int(item))
+    if len(filter_list) == 2 and (filter_list[0] < filter_list[1]):
+        return filter_list
+    return filter_list
 
 
 def print_top(vacancies, number):

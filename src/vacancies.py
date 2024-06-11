@@ -24,7 +24,8 @@ class Vacancy:
     def __eq__(self, other):
         '''
         Метод переопределяет операцию сравнения "==" для сравнения объектов вакансий,
-        в качестве критерия для сравнения используются свойства "Зарплата от" и "Зарплата до"
+        в качестве критерия для сравнения используются свойства "Зарплата от" и "Зарплата до".
+        Если у сравниваемых объектов зарплаты не указаны, они также считаются равными.
         '''
         if self.salary == 'Зарплата не указана' and other.salary == 'Зарплата не указана':
             return True
@@ -87,7 +88,10 @@ class Vacancy:
 
     @classmethod
     def build_object_list(cls, vacancies):
-        vacancies_list = []
+        '''
+        Функция принимает список вакансий в словарях и формирует список экземпляров класса вакансий
+        '''
+        vacancies_list: list[Vacancy] = []
         for vacancy in vacancies:
             url = ''
             salary_from = None
@@ -109,7 +113,7 @@ class Vacancy:
                     currency = 'руб.'
                 else:
                     currency = vacancy['salary']['currency']
-                salary = cls.build_salary(salary_from, salary_to, currency)
+                salary = cls.build_salary(salary_from, salary_to, currency) # формируем строку salary
             else:
                 salary = "Зарплата не указана"
             if vacancy.get('experience'):

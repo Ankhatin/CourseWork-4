@@ -4,7 +4,7 @@ from lxml import etree
 from datetime import date, datetime
 
 
-class Parser:
+class Parser(ABC):
 
     @abstractmethod
     def load_data(self, keyword=None):
@@ -12,6 +12,9 @@ class Parser:
 
 
 class HeadHunterAPI(Parser):
+    '''
+    Класс для работы с вакансиями, загруженными с платформы hh.ru
+    '''
     def __init__(self):
         self.url = 'https://api.hh.ru/vacancies'
         self.headers = {'User-Agent': 'HH-User-Agent'}
@@ -34,7 +37,7 @@ class HeadHunterAPI(Parser):
 class CurrencyCourseAPI(Parser):
     '''
     Класс отправляет запрос на сайт Центрального Банка РФ,
-    загружает файл в формате xml и парсит его
+    загружает данные в формате xml и парсит их
     '''
     courses = {}
 
@@ -49,7 +52,7 @@ class CurrencyCourseAPI(Parser):
         парсит данные и записывает курсы валют в атрибут класса course
         '''
         response = requests.get(self.url)
-        names = ('KZT', 'BYR', 'USD', 'EUR')
+        names = ('KZT', 'BYN', 'USD', 'EUR')
         if response.status_code == 200:
             text_XML = response.content
             elements = etree.fromstring(text_XML, parser=etree.XMLParser(encoding='cp1251', recover=True))
